@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AdminRole {
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  AWAITING_PAYMENT
+  PAID
+  FULFILLED
+  CANCELLED
+}
+
+enum Category {
+  FRUITS
+  GRAINS
+  VEGETABLES
+  LIVESTOCK
+  POULTRY
+  FISH
+  EQUIPMENT
+  PROCESSED_FOODS
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  role         AdminRole @default(ADMIN)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Seller {
+  id        String    @id @default(cuid())
+  name      String
+  country   String
+  verified  Boolean   @default(false)
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Product {
+  id              String       @id @default(cuid())
+  name            String
+  slug            String       @unique
+  description     String
+  price           Int
+  compareAtPrice  Int?
+  currency        String       @default("NGN")
+  category        Category
+  countryOfOrigin String
+  stockQuantity   Int
+  unit            String
+  imageUrl        String
+  halalCertified  Boolean      @default(false)
+  exportCertified Boolean      @default(false)
+  featured        Boolean      @default(false)
+  sellerId        String
+  seller          Seller       @relation(fields: [sellerId], references: [id])
+  bulkPricing     BulkPrice[]
+  orderItems      OrderItem[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+model BulkPrice {
+  id          String  @id @default(cuid())
+  minQuantity Int
+  unitPrice   Int
+  productId   String
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
+  customerName    String
+  email           String
+  phone           String
+  deliveryCountry String
+  deliveryAddress String
+  notes           String?
+  status          OrderStatus @default(PENDING)
+  subtotal        Int
+  items           OrderItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  quantity  Int
+  unitPrice Int
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
