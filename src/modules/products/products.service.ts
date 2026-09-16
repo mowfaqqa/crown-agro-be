@@ -46,6 +46,24 @@ export class ProductsService {
     });
 
     return products.map((product) => ({
+      ...this.serializeProduct(product)
+    }));
+  }
+
+  async findBySlug(slug: string) {
+    const product = await this.prisma.product.findUnique({
+      where: { slug },
+      include: { seller: true, bulkPricing: { orderBy: { minQuantity: "asc" } } }
+    });
+    return product ? this.serializeProduct(product) : null;
+  }
+
+  private serializeProduct(
+    product: Prisma.ProductGetPayload<{
+      include: { seller: true; bulkPricing: true };
+    }>
+  ) {
+    return {
       id: product.id,
       name: product.name,
       slug: product.slug,
@@ -66,6 +84,6 @@ export class ProductsService {
         unitPrice: price.unitPrice
       })),
       featured: product.featured
-    }));
+    };
   }
 }
