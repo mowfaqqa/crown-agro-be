@@ -1,14 +1,18 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { NotificationsService } from "../notifications/notifications.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { LookupOrderDto } from "./dto/lookup-order.dto";
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService
+  ) {}
 
   async create(dto: CreateOrderDto) {
-    return this.prisma.$transaction(async (tx) => {
+    const order = await this.prisma.$transaction(async (tx) => {
       const productIds = dto.items.map((item) => item.productId);
       const products = await tx.product.findMany({ where: { id: { in: productIds } } });
       if (products.length !== productIds.length) {
@@ -66,6 +70,15 @@ export class OrdersService {
         subtotal: order.subtotal
       };
     });
+
+    await this.notifications.orderCreated({
+      orderNumber: order.orderNumber,
+      email: dto.email.toLowerCase(),
+      customerName: dto.customerName,
+      subtotal: order.subtotal
+    });
+
+    return order;
   }
 
   async lookup(dto: LookupOrderDto) {

@@ -27,7 +27,7 @@ export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(query: ProductQueryDto) {
-    const where: Prisma.ProductWhereInput = {};
+    const where: Prisma.ProductWhereInput = { archivedAt: null };
     if (query.search) {
       where.OR = [
         { name: { contains: query.search, mode: "insensitive" } },
@@ -51,8 +51,8 @@ export class ProductsService {
   }
 
   async findBySlug(slug: string) {
-    const product = await this.prisma.product.findUnique({
-      where: { slug },
+    const product = await this.prisma.product.findFirst({
+      where: { slug, archivedAt: null },
       include: { seller: true, bulkPricing: { orderBy: { minQuantity: "asc" } } }
     });
     return product ? this.serializeProduct(product) : null;

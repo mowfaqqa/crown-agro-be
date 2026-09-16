@@ -66,6 +66,7 @@ model Product {
   halalCertified  Boolean      @default(false)
   exportCertified Boolean      @default(false)
   featured        Boolean      @default(false)
+  archivedAt      DateTime?
   sellerId        String
   seller          Seller       @relation(fields: [sellerId], references: [id])
   bulkPricing     BulkPrice[]
@@ -91,7 +92,12 @@ model Order {
   deliveryCountry String
   deliveryAddress String
   notes           String?
+  fulfillmentNotes String?
   status          OrderStatus @default(PENDING)
+  paymentProvider String?
+  paymentReference String?     @unique
+  paymentUrl       String?
+  paidAt           DateTime?
   subtotal        Int
   items           OrderItem[]
   createdAt       DateTime    @default(now())

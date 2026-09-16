@@ -1,7 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { OrderStatus, Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { UpsertProductDto } from "./dto/admin-product.dto";
+import { UpdateOrderNotesDto } from "./dto/update-order-notes.dto";
 
 @Injectable()
 export class AdminService {
@@ -9,10 +10,10 @@ export class AdminService {
 
   async stats() {
     const [products, orders, pendingOrders, lowStock, paidRevenue] = await Promise.all([
-      this.prisma.product.count(),
+      this.prisma.product.count({ where: { archivedAt: null } }),
       this.prisma.order.count(),
       this.prisma.order.count({ where: { status: OrderStatus.PENDING } }),
-      this.prisma.product.count({ where: { stockQuantity: { lte: 20 } } }),
+      this.prisma.product.count({ where: { archivedAt: null, stockQuantity: { lte: 20 } } }),
       this.prisma.order.aggregate({
         where: { status: { in: [OrderStatus.PAID, OrderStatus.FULFILLED] } },
         _sum: { subtotal: true }
@@ -50,6 +51,7 @@ export class AdminService {
       halalCertified: product.halalCertified,
       exportCertified: product.exportCertified,
       featured: product.featured,
+      archivedAt: product.archivedAt,
       sellerName: product.seller.name,
       sellerCountry: product.seller.country,
       bulkPricing: product.bulkPricing.map((price) => ({
@@ -83,12 +85,24 @@ export class AdminService {
     });
   }
 
-  async deleteProduct(id: string) {
-    const orderItemCount = await this.prisma.orderItem.count({ where: { productId: id } });
-    if (orderItemCount > 0) {
-      throw new BadRequestException("Products attached to existing orders cannot be deleted");
-    }
-    await this.prisma.product.delete({ where: { id } });
+  async archiveProduct(id: string) {
+    await this.ensureProductExists(id);
+    await this.prisma.product.update({
+      where: { id },
+      data: {
+        archivedAt: new Date(),
+        featured: false
+      }
+    });
+    return { ok: true };
+  }
+
+  async unarchiveProduct(id: string) {
+    await this.ensureProductExists(id);
+    await this.prisma.product.update({
+      where: { id },
+      data: { archivedAt: null }
+    });
     return { ok: true };
   }
 
@@ -110,8 +124,24 @@ export class AdminService {
   async updateOrderStatus(id: string, status: OrderStatus) {
     return this.prisma.order.update({
       where: { id },
-      data: { status }
+      data: { status },
+      include: this.orderInclude()
     });
+  }
+
+  async updateOrderNotes(id: string, dto: UpdateOrderNotesDto) {
+    return this.prisma.order.update({
+      where: { id },
+      data: {
+        fulfillmentNotes: dto.fulfillmentNotes?.trim() || null
+      },
+      include: this.orderInclude()
+    });
+  }
+
+  private async ensureProductExists(id: string) {
+    const existing = await this.prisma.product.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException("Product not found");
   }
 
   private async findOrCreateSeller(name: string, country: string) {
@@ -158,5 +188,17 @@ export class AdminService {
       featured: dto.featured,
       seller: { connect: { id: sellerId } }
     };
+  }
+
+  private orderInclude() {
+    return {
+      items: {
+        include: {
+          product: {
+            select: { name: true, unit: true, imageUrl: true }
+          }
+        }
+      }
+    } satisfies Prisma.OrderInclude;
   }
 }

@@ -1,7 +1,8 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { AdminService } from "./admin.service";
 import { UpsertProductDto } from "./dto/admin-product.dto";
+import { UpdateOrderNotesDto } from "./dto/update-order-notes.dto";
 import { UpdateOrderStatusDto } from "./dto/update-order-status.dto";
 
 @UseGuards(JwtAuthGuard)
@@ -29,9 +30,14 @@ export class AdminController {
     return this.adminService.updateProduct(id, dto);
   }
 
-  @Delete("products/:id")
-  deleteProduct(@Param("id") id: string) {
-    return this.adminService.deleteProduct(id);
+  @Patch("products/:id/archive")
+  archiveProduct(@Param("id") id: string) {
+    return this.adminService.archiveProduct(id);
+  }
+
+  @Patch("products/:id/unarchive")
+  unarchiveProduct(@Param("id") id: string) {
+    return this.adminService.unarchiveProduct(id);
   }
 
   @Get("orders")
@@ -42,5 +48,10 @@ export class AdminController {
   @Patch("orders/:id/status")
   updateOrderStatus(@Param("id") id: string, @Body() dto: UpdateOrderStatusDto) {
     return this.adminService.updateOrderStatus(id, dto.status);
+  }
+
+  @Patch("orders/:id/notes")
+  updateOrderNotes(@Param("id") id: string, @Body() dto: UpdateOrderNotesDto) {
+    return this.adminService.updateOrderNotes(id, dto);
   }
 }
