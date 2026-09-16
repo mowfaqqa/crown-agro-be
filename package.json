@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "prisma generate && nest build",
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate && prisma migrate deploy",
     "start": "node dist/main",
     "start:dev": "nest start --watch",
     "lint": "eslint \"src/**/*.ts\"",
