@@ -98,7 +98,7 @@ export class AdminService {
         items: {
           include: {
             product: {
-              select: { name: true, unit: true }
+              select: { name: true, unit: true, imageUrl: true }
             }
           }
         }
