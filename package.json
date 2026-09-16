@@ -4,12 +4,12 @@
   "private": true,
   "packageManager": "pnpm@9.15.0",
   "engines": {
-    "node": ">=20"
+    "node": "20.x"
   },
   "scripts": {
     "build": "prisma generate && nest build",
-    "postinstall": "prisma generate && prisma migrate deploy",
-    "start": "node dist/main",
+    "postinstall": "prisma generate",
+    "start": "node dist/src/main.js",
     "start:dev": "nest start --watch",
     "lint": "eslint \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit",
