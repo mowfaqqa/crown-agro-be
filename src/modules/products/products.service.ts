@@ -38,16 +38,50 @@ export class ProductsService {
     if (query.category && categoryMap[query.category]) {
       where.category = categoryMap[query.category];
     }
+    if (query.country) where.countryOfOrigin = { equals: query.country, mode: "insensitive" };
+    if (query.halal) where.halalCertified = true;
+    if (query.exportCertified) where.exportCertified = true;
+    if (query.availability === "in_stock") where.stockQuantity = { gt: 0 };
+    if (query.availability === "out_of_stock") where.stockQuantity = 0;
 
-    const products = await this.prisma.product.findMany({
-      where,
-      include: { seller: true, bulkPricing: { orderBy: { minQuantity: "asc" } } },
-      orderBy: [{ featured: "desc" }, { createdAt: "desc" }]
-    });
+    const sortOptions = {
+      newest: [{ createdAt: "desc" }],
+      price_asc: [{ price: "asc" }, { name: "asc" }],
+      price_desc: [{ price: "desc" }, { name: "asc" }],
+      name_asc: [{ name: "asc" }],
+      featured: [{ featured: "desc" }, { createdAt: "desc" }]
+    } satisfies Record<ProductQueryDto["sort"], Prisma.ProductOrderByWithRelationInput[]>;
+    const orderBy = sortOptions[query.sort];
 
-    return products.map((product) => ({
-      ...this.serializeProduct(product)
-    }));
+    const [products, total, countryRows] = await Promise.all([
+      this.prisma.product.findMany({
+        where,
+        include: { seller: true, bulkPricing: { orderBy: { minQuantity: "asc" } } },
+        orderBy,
+        skip: (query.page - 1) * query.limit,
+        take: query.limit
+      }),
+      this.prisma.product.count({ where }),
+      this.prisma.product.findMany({
+        where: { archivedAt: null },
+        distinct: ["countryOfOrigin"],
+        select: { countryOfOrigin: true },
+        orderBy: { countryOfOrigin: "asc" }
+      })
+    ]);
+
+    return {
+      items: products.map((product) => this.serializeProduct(product)),
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / query.limit))
+      },
+      filters: {
+        countries: countryRows.map((row) => row.countryOfOrigin)
+      }
+    };
   }
 
   async findBySlug(slug: string) {

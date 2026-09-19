@@ -40,6 +40,16 @@ model AdminUser {
   updatedAt    DateTime  @updatedAt
 }
 
+model Customer {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  orders       Order[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 model Seller {
   id        String    @id @default(cuid())
   name      String
@@ -99,6 +109,9 @@ model Order {
   paymentUrl       String?
   paidAt           DateTime?
   subtotal        Int
+  checkoutKey     String?     @unique
+  customerId      String?
+  customer        Customer?   @relation(fields: [customerId], references: [id])
   items           OrderItem[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt

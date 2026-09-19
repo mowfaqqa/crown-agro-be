@@ -3,6 +3,13 @@ import { PrismaService } from "../prisma/prisma.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { LookupOrderDto } from "./dto/lookup-order.dto";
+import { Prisma } from "@prisma/client";
+
+type AuthenticatedCustomer = {
+  id: string;
+  name: string;
+  email: string;
+};
 
 @Injectable()
 export class OrdersService {
@@ -11,10 +18,21 @@ export class OrdersService {
     private readonly notifications: NotificationsService
   ) {}
 
-  async create(dto: CreateOrderDto) {
-    const order = await this.prisma.$transaction(async (tx) => {
+  async create(dto: CreateOrderDto, customer: AuthenticatedCustomer) {
+    const duplicate = await this.prisma.order.findFirst({
+      where: { checkoutKey: dto.idempotencyKey, customerId: customer.id }
+    });
+    if (duplicate) return this.orderConfirmation(duplicate);
+
+    const createOrder = () => this.prisma.$transaction(async (tx) => {
       const productIds = dto.items.map((item) => item.productId);
-      const products = await tx.product.findMany({ where: { id: { in: productIds } } });
+      if (new Set(productIds).size !== productIds.length) {
+        throw new BadRequestException("Each product can only appear once in an order");
+      }
+      const products = await tx.product.findMany({
+        where: { id: { in: productIds }, archivedAt: null },
+        include: { bulkPricing: { orderBy: { minQuantity: "asc" } } }
+      });
       if (products.length !== productIds.length) {
         throw new BadRequestException("One or more products are unavailable");
       }
@@ -22,13 +40,20 @@ export class OrdersService {
       const itemRows = dto.items.map((item) => {
         const product = products.find((candidate) => candidate.id === item.productId);
         if (!product) throw new BadRequestException("Product is unavailable");
-        if (item.quantity > product.stockQuantity) {
-          throw new BadRequestException(`${product.name} only has ${product.stockQuantity} units available`);
+        if (product.stockQuantity === 0) {
+          throw new BadRequestException(`${product.name} is out of stock`);
         }
+        if (item.quantity > product.stockQuantity) {
+          throw new BadRequestException(`${product.name} has only ${product.stockQuantity} ${product.unit}${product.stockQuantity === 1 ? "" : "s"} available`);
+        }
+        const unitPrice = product.bulkPricing.reduce(
+          (price, tier) => (item.quantity >= tier.minQuantity ? tier.unitPrice : price),
+          product.price
+        );
         return {
           productId: product.id,
           quantity: item.quantity,
-          unitPrice: product.price
+          unitPrice
         };
       });
       const subtotal = itemRows.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
@@ -52,8 +77,10 @@ export class OrdersService {
       const order = await tx.order.create({
         data: {
           orderNumber,
-          customerName: dto.customerName,
-          email: dto.email.toLowerCase(),
+          customerName: customer.name,
+          email: customer.email,
+          customerId: customer.id,
+          checkoutKey: dto.idempotencyKey,
           phone: dto.phone,
           deliveryCountry: dto.deliveryCountry,
           deliveryAddress: dto.deliveryAddress,
@@ -63,22 +90,30 @@ export class OrdersService {
         }
       });
 
-      return {
-        id: order.id,
-        orderNumber: order.orderNumber,
-        status: order.status,
-        subtotal: order.subtotal
-      };
+      return order;
     });
+
+    let order;
+    try {
+      order = await createOrder();
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        const existing = await this.prisma.order.findFirst({
+          where: { checkoutKey: dto.idempotencyKey, customerId: customer.id }
+        });
+        if (existing) return this.orderConfirmation(existing);
+      }
+      throw error;
+    }
 
     await this.notifications.orderCreated({
       orderNumber: order.orderNumber,
-      email: dto.email.toLowerCase(),
-      customerName: dto.customerName,
+      email: customer.email,
+      customerName: customer.name,
       subtotal: order.subtotal
     });
 
-    return order;
+    return this.orderConfirmation(order);
   }
 
   async lookup(dto: LookupOrderDto) {
@@ -103,5 +138,14 @@ export class OrdersService {
     });
     if (!order) throw new NotFoundException("Order not found");
     return order;
+  }
+
+  private orderConfirmation(order: { id: string; orderNumber: string; status: string; subtotal: number }) {
+    return {
+      id: order.id,
+      orderNumber: order.orderNumber,
+      status: order.status,
+      subtotal: order.subtotal
+    };
   }
 }

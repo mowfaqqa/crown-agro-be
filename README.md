@@ -9,7 +9,16 @@ NestJS API for the ZD Crown agro marketplace.
 - Prisma
 - PostgreSQL
 - JWT admin authentication
+- JWT customer authentication and protected checkout
 - Helmet, CORS, validation pipes, and rate limiting
+
+## Marketplace Rules
+
+- Product filtering, sorting, and pagination are server-driven.
+- Bulk pricing is calculated by the API at checkout.
+- Checkout requests are idempotent and require a customer JWT.
+- Cancelling an unpaid order restores its reserved stock.
+- Order status changes follow a controlled fulfillment sequence.
 
 ## Setup
 

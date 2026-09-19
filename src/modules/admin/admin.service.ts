@@ -1,8 +1,17 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { OrderStatus, Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { UpsertProductDto } from "./dto/admin-product.dto";
 import { UpdateOrderNotesDto } from "./dto/update-order-notes.dto";
+
+const allowedOrderTransitions: Record<OrderStatus, OrderStatus[]> = {
+  PENDING: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+  CONFIRMED: [OrderStatus.AWAITING_PAYMENT, OrderStatus.CANCELLED],
+  AWAITING_PAYMENT: [OrderStatus.PAID, OrderStatus.CANCELLED],
+  PAID: [OrderStatus.FULFILLED],
+  FULFILLED: [],
+  CANCELLED: []
+};
 
 @Injectable()
 export class AdminService {
@@ -122,10 +131,37 @@ export class AdminService {
   }
 
   async updateOrderStatus(id: string, status: OrderStatus) {
-    return this.prisma.order.update({
-      where: { id },
-      data: { status },
-      include: this.orderInclude()
+    return this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({
+        where: { id },
+        include: { items: true }
+      });
+      if (!order) throw new NotFoundException("Order not found");
+      if (order.status === status) {
+        return tx.order.findUniqueOrThrow({ where: { id }, include: this.orderInclude() });
+      }
+      if (!allowedOrderTransitions[order.status].includes(status)) {
+        throw new BadRequestException(`Order cannot move from ${order.status} to ${status}`);
+      }
+
+      const updated = await tx.order.updateMany({
+        where: { id, status: order.status },
+        data: { status }
+      });
+      if (updated.count !== 1) {
+        throw new ConflictException("Order status changed. Refresh and try again");
+      }
+
+      if (status === OrderStatus.CANCELLED) {
+        for (const item of order.items) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stockQuantity: { increment: item.quantity } }
+          });
+        }
+      }
+
+      return tx.order.findUniqueOrThrow({ where: { id }, include: this.orderInclude() });
     });
   }
 

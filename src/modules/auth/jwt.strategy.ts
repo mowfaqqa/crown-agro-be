@@ -8,6 +8,7 @@ type JwtPayload = {
   sub: string;
   email: string;
   role: "ADMIN";
+  kind: "admin";
 };
 
 @Injectable()
@@ -24,6 +25,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
+    if (payload.kind !== "admin") throw new UnauthorizedException("Admin login required");
     const admin = await this.prisma.adminUser.findUnique({ where: { id: payload.sub } });
     if (!admin) throw new UnauthorizedException("Admin account no longer exists");
     return { id: admin.id, email: admin.email, role: admin.role };

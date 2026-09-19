@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { ArrayMinSize, IsEmail, IsInt, IsOptional, IsString, Min, ValidateNested } from "class-validator";
+import { ArrayMinSize, IsInt, IsOptional, IsString, IsUUID, Min, ValidateNested } from "class-validator";
 
 class CreateOrderItemDto {
   @IsString()
@@ -11,11 +11,8 @@ class CreateOrderItemDto {
 }
 
 export class CreateOrderDto {
-  @IsString()
-  customerName!: string;
-
-  @IsEmail()
-  email!: string;
+  @IsUUID()
+  idempotencyKey!: string;
 
   @IsString()
   phone!: string;
