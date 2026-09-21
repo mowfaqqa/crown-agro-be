@@ -6,7 +6,7 @@ import { OrdersService } from "./orders.service";
 import { CustomerAuthGuard } from "../../common/guards/customer-auth.guard";
 
 type CustomerRequest = {
-  user: { id: string; name: string; email: string };
+  user: { id: string; name: string; email: string; emailVerified: boolean };
 };
 
 @Controller("orders")

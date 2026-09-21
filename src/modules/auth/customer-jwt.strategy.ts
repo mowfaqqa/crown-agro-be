@@ -27,6 +27,6 @@ export class CustomerJwtStrategy extends PassportStrategy(Strategy, "customer-jw
     if (payload.kind !== "customer") throw new UnauthorizedException("Customer login required");
     const customer = await this.prisma.customer.findUnique({ where: { id: payload.sub } });
     if (!customer) throw new UnauthorizedException("Customer account no longer exists");
-    return { id: customer.id, name: customer.name, email: customer.email };
+    return { id: customer.id, name: customer.name, email: customer.email, emailVerified: Boolean(customer.emailVerifiedAt) };
   }
 }

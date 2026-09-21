@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
@@ -9,6 +9,7 @@ type AuthenticatedCustomer = {
   id: string;
   name: string;
   email: string;
+  emailVerified: boolean;
 };
 
 @Injectable()
@@ -19,6 +20,9 @@ export class OrdersService {
   ) {}
 
   async create(dto: CreateOrderDto, customer: AuthenticatedCustomer) {
+    if (!customer.emailVerified) {
+      throw new ForbiddenException("Verify your email before placing an order");
+    }
     const duplicate = await this.prisma.order.findFirst({
       where: { checkoutKey: dto.idempotencyKey, customerId: customer.id }
     });

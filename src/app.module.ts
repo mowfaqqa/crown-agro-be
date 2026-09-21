@@ -9,6 +9,7 @@ import { NotificationsModule } from "./modules/notifications/notifications.modul
 import { OrdersModule } from "./modules/orders/orders.module";
 import { PrismaModule } from "./modules/prisma/prisma.module";
 import { ProductsModule } from "./modules/products/products.module";
+import { CustomersModule } from "./modules/customers/customers.module";
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ProductsModule } from "./modules/products/products.module";
     ]),
     PrismaModule,
     AuthModule,
+    CustomersModule,
     ProductsModule,
     OrdersModule,
     NotificationsModule,

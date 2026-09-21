@@ -7,10 +7,12 @@ import { AuthService } from "./auth.service";
 import { JwtStrategy } from "./jwt.strategy";
 import { CustomerJwtStrategy } from "./customer-jwt.strategy";
 import { CustomerAuthGuard } from "../../common/guards/customer-auth.guard";
+import { NotificationsModule } from "../notifications/notifications.module";
 
 @Module({
   imports: [
     PassportModule,
+    NotificationsModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
