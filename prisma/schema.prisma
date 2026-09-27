@@ -56,6 +56,31 @@ enum ServiceEnquiryStatus {
   CLOSED
 }
 
+enum InvestmentCategory {
+  FARMING_SEASON
+  FRESH_PRODUCE
+  GRAINS
+  LIVESTOCK
+  EXPORT_LOGISTICS
+  WAREHOUSING
+  PROCESSING
+}
+
+enum InvestorType {
+  INDIVIDUAL
+  BUSINESS
+  INSTITUTION
+  NGO
+  GOVERNMENT
+}
+
+enum InvestmentInterestStatus {
+  NEW
+  IN_REVIEW
+  CONTACTED
+  CLOSED
+}
+
 model AdminUser {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -77,6 +102,7 @@ model Customer {
   passwordResetTokens     PasswordResetToken[]
   refreshSessions         RefreshSession[]
   serviceEnquiries        ServiceEnquiry[]
+  investmentInterests     InvestmentInterest[]
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 }
@@ -250,5 +276,49 @@ model ServiceEnquiry {
   updatedAt  DateTime             @updatedAt
 
   @@index([customerId, createdAt])
+  @@index([status, createdAt])
+}
+
+model InvestmentOpportunity {
+  id                    String               @id @default(cuid())
+  title                 String
+  slug                  String               @unique
+  summary               String
+  description           String
+  category              InvestmentCategory
+  location              String?
+  imageUrl              String?
+  fundingTarget         Int?
+  minimumInterestAmount Int?
+  durationMonths        Int?
+  riskSummary           String
+  featured              Boolean              @default(false)
+  openForInterest       Boolean              @default(true)
+  publishedAt           DateTime?
+  archivedAt            DateTime?
+  interests             InvestmentInterest[]
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  @@index([category, publishedAt])
+}
+
+model InvestmentInterest {
+  id               String                   @id @default(cuid())
+  opportunityId    String
+  opportunity      InvestmentOpportunity    @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  customerId       String
+  customer         Customer                 @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  investorType     InvestorType
+  organizationName String?
+  phone            String
+  indicativeAmount Int?
+  message          String
+  status           InvestmentInterestStatus @default(NEW)
+  adminNotes       String?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  @@unique([opportunityId, customerId])
   @@index([status, createdAt])
 }

@@ -16,6 +16,17 @@ type ServiceEnquiryNotification = {
   message: string;
 };
 
+type InvestmentInterestNotification = {
+  opportunityTitle: string;
+  customerName: string;
+  customerEmail: string;
+  investorType: string;
+  organizationName: string | null;
+  phone: string;
+  indicativeAmount: number | null;
+  message: string;
+};
+
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
@@ -57,6 +68,22 @@ export class NotificationsService {
       recipient,
       `New service enquiry: ${payload.serviceTitle}`,
       `<h1>New service enquiry</h1><p><strong>Service:</strong> ${this.escapeHtml(payload.serviceTitle)}</p><p><strong>Customer:</strong> ${this.escapeHtml(payload.customerName)} (${this.escapeHtml(payload.customerEmail)})</p><p><strong>Phone:</strong> ${this.escapeHtml(payload.phone)}</p><p><strong>Message:</strong></p><p>${this.escapeHtml(payload.message).replace(/\n/g, "<br>")}</p>`,
+      `${this.frontendUrl()}/admin`
+    );
+  }
+
+  async sendInvestmentInterest(payload: InvestmentInterestNotification) {
+    const recipient = this.config.get<string>("INVESTMENT_NOTIFICATION_EMAIL") ?? this.config.get<string>("ADMIN_EMAIL");
+    if (!recipient) {
+      this.logger.warn("No investment interest notification recipient is configured");
+      return;
+    }
+
+    const amount = payload.indicativeAmount ? `NGN ${payload.indicativeAmount.toLocaleString("en-NG")}` : "Not supplied";
+    await this.sendEmail(
+      recipient,
+      `New investment interest: ${payload.opportunityTitle}`,
+      `<h1>New expression of interest</h1><p><strong>Opportunity:</strong> ${this.escapeHtml(payload.opportunityTitle)}</p><p><strong>Customer:</strong> ${this.escapeHtml(payload.customerName)} (${this.escapeHtml(payload.customerEmail)})</p><p><strong>Investor type:</strong> ${this.escapeHtml(payload.investorType)}</p><p><strong>Organization:</strong> ${this.escapeHtml(payload.organizationName ?? "Not supplied")}</p><p><strong>Phone:</strong> ${this.escapeHtml(payload.phone)}</p><p><strong>Indicative amount:</strong> ${this.escapeHtml(amount)}</p><p><strong>Message:</strong></p><p>${this.escapeHtml(payload.message).replace(/\n/g, "<br>")}</p>`,
       `${this.frontendUrl()}/admin`
     );
   }

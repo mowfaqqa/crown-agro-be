@@ -29,6 +29,7 @@ Customer access tokens are short-lived. Persistent login uses a rotating, HttpOn
 - `RESEND_API_KEY` - sends verification and password-reset emails
 - `EMAIL_FROM` - verified sender address in Resend
 - `ENQUIRY_NOTIFICATION_EMAIL` - receives new service enquiries; defaults to `ADMIN_EMAIL`
+- `INVESTMENT_NOTIFICATION_EMAIL` - receives expressions of investment interest; defaults to `ADMIN_EMAIL`
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` - Google OAuth credentials
 - `GOOGLE_REDIRECT_URI` - backend URL ending in `/auth/google/callback`
 
@@ -83,7 +84,7 @@ Required environment variables:
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD`
 - `FRONTEND_URL` - deployed frontend URL
-- `RESEND_API_KEY`, `EMAIL_FROM`, and optionally `ENQUIRY_NOTIFICATION_EMAIL`
+- `RESEND_API_KEY`, `EMAIL_FROM`, and optionally the enquiry notification addresses
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI`
 - `PORT` - Render sets this automatically; only add it if needed
 

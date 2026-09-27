@@ -12,6 +12,7 @@ import { ProductsModule } from "./modules/products/products.module";
 import { CustomersModule } from "./modules/customers/customers.module";
 import { MarketIntelligenceModule } from "./modules/market-intelligence/market-intelligence.module";
 import { ServiceDirectoryModule } from "./modules/service-directory/service-directory.module";
+import { InvestmentsModule } from "./modules/investments/investments.module";
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ServiceDirectoryModule } from "./modules/service-directory/service-dire
     CustomersModule,
     MarketIntelligenceModule,
     ServiceDirectoryModule,
+    InvestmentsModule,
     ProductsModule,
     OrdersModule,
     NotificationsModule,

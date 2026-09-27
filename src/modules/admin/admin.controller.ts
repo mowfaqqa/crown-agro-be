@@ -7,6 +7,8 @@ import { UpdateOrderStatusDto } from "./dto/update-order-status.dto";
 import { UpsertMarketInsightDto } from "./dto/admin-market-insight.dto";
 import { UpsertServiceListingDto } from "./dto/admin-service-listing.dto";
 import { UpdateServiceEnquiryDto } from "./dto/update-service-enquiry.dto";
+import { UpsertInvestmentOpportunityDto } from "./dto/admin-investment-opportunity.dto";
+import { UpdateInvestmentInterestDto } from "./dto/update-investment-interest.dto";
 
 @UseGuards(JwtAuthGuard)
 @Controller("admin")
@@ -101,6 +103,41 @@ export class AdminController {
   @Patch("service-enquiries/:id")
   updateServiceEnquiry(@Param("id") id: string, @Body() dto: UpdateServiceEnquiryDto) {
     return this.adminService.updateServiceEnquiry(id, dto);
+  }
+
+  @Get("investments")
+  investments() {
+    return this.adminService.investments();
+  }
+
+  @Post("investments")
+  createInvestment(@Body() dto: UpsertInvestmentOpportunityDto) {
+    return this.adminService.createInvestment(dto);
+  }
+
+  @Patch("investments/:id")
+  updateInvestment(@Param("id") id: string, @Body() dto: UpsertInvestmentOpportunityDto) {
+    return this.adminService.updateInvestment(id, dto);
+  }
+
+  @Patch("investments/:id/archive")
+  archiveInvestment(@Param("id") id: string) {
+    return this.adminService.setInvestmentArchived(id, true);
+  }
+
+  @Patch("investments/:id/unarchive")
+  unarchiveInvestment(@Param("id") id: string) {
+    return this.adminService.setInvestmentArchived(id, false);
+  }
+
+  @Get("investment-interests")
+  investmentInterests() {
+    return this.adminService.investmentInterests();
+  }
+
+  @Patch("investment-interests/:id")
+  updateInvestmentInterest(@Param("id") id: string, @Body() dto: UpdateInvestmentInterestDto) {
+    return this.adminService.updateInvestmentInterest(id, dto);
   }
 
   @Get("orders")

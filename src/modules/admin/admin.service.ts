@@ -6,6 +6,8 @@ import { UpdateOrderNotesDto } from "./dto/update-order-notes.dto";
 import { UpsertMarketInsightDto } from "./dto/admin-market-insight.dto";
 import { UpsertServiceListingDto } from "./dto/admin-service-listing.dto";
 import { UpdateServiceEnquiryDto } from "./dto/update-service-enquiry.dto";
+import { UpsertInvestmentOpportunityDto } from "./dto/admin-investment-opportunity.dto";
+import { UpdateInvestmentInterestDto } from "./dto/update-investment-interest.dto";
 
 const allowedOrderTransitions: Record<OrderStatus, OrderStatus[]> = {
   PENDING: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
@@ -214,6 +216,61 @@ export class AdminService {
     });
   }
 
+  investments() {
+    return this.prisma.investmentOpportunity.findMany({
+      include: { _count: { select: { interests: true } } },
+      orderBy: [{ archivedAt: "asc" }, { updatedAt: "desc" }]
+    });
+  }
+
+  createInvestment(dto: UpsertInvestmentOpportunityDto) {
+    return this.prisma.investmentOpportunity.create({ data: this.investmentData(dto) });
+  }
+
+  async updateInvestment(id: string, dto: UpsertInvestmentOpportunityDto) {
+    const existing = await this.ensureInvestmentExists(id);
+    return this.prisma.investmentOpportunity.update({
+      where: { id },
+      data: this.investmentData(dto, existing.publishedAt)
+    });
+  }
+
+  async setInvestmentArchived(id: string, archived: boolean) {
+    await this.ensureInvestmentExists(id);
+    await this.prisma.investmentOpportunity.update({
+      where: { id },
+      data: {
+        archivedAt: archived ? new Date() : null,
+        featured: archived ? false : undefined,
+        openForInterest: archived ? false : undefined
+      }
+    });
+    return { ok: true };
+  }
+
+  investmentInterests() {
+    return this.prisma.investmentInterest.findMany({
+      include: {
+        opportunity: { select: { id: true, title: true, slug: true, category: true } },
+        customer: { select: { id: true, name: true, email: true } }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+  }
+
+  async updateInvestmentInterest(id: string, dto: UpdateInvestmentInterestDto) {
+    const existing = await this.prisma.investmentInterest.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException("Investment interest not found");
+    return this.prisma.investmentInterest.update({
+      where: { id },
+      data: { status: dto.status, adminNotes: dto.adminNotes?.trim() || null },
+      include: {
+        opportunity: { select: { id: true, title: true, slug: true, category: true } },
+        customer: { select: { id: true, name: true, email: true } }
+      }
+    });
+  }
+
   async updateOrderStatus(id: string, status: OrderStatus) {
     return this.prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
@@ -276,6 +333,12 @@ export class AdminService {
     return existing;
   }
 
+  private async ensureInvestmentExists(id: string) {
+    const existing = await this.prisma.investmentOpportunity.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException("Investment opportunity not found");
+    return existing;
+  }
+
   private marketInsightData(dto: UpsertMarketInsightDto, publishedAt?: Date | null) {
     return {
       title: dto.title.trim(),
@@ -305,6 +368,25 @@ export class AdminService {
       location: dto.location?.trim() || null,
       imageUrl: dto.imageUrl?.trim() || null,
       featured: dto.featured,
+      publishedAt: dto.published ? publishedAt ?? new Date() : null
+    };
+  }
+
+  private investmentData(dto: UpsertInvestmentOpportunityDto, publishedAt?: Date | null) {
+    return {
+      title: dto.title.trim(),
+      slug: dto.slug.trim().toLowerCase(),
+      summary: dto.summary.trim(),
+      description: dto.description.trim(),
+      category: dto.category,
+      location: dto.location?.trim() || null,
+      imageUrl: dto.imageUrl?.trim() || null,
+      fundingTarget: dto.fundingTarget ?? null,
+      minimumInterestAmount: dto.minimumInterestAmount ?? null,
+      durationMonths: dto.durationMonths ?? null,
+      riskSummary: dto.riskSummary.trim(),
+      featured: dto.featured,
+      openForInterest: dto.openForInterest,
       publishedAt: dto.published ? publishedAt ?? new Date() : null
     };
   }
