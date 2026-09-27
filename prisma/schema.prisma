@@ -38,6 +38,24 @@ enum MarketInsightType {
   WEATHER_ADVISORY
 }
 
+enum ServiceCategory {
+  EQUIPMENT_RENTAL
+  JOB_BOARD
+  TRAINING
+  EXPORT_LOGISTICS
+  INPUT_SUPPLY
+  WAREHOUSING
+  SMART_FARMING
+  COMMUNITY
+}
+
+enum ServiceEnquiryStatus {
+  NEW
+  IN_REVIEW
+  CONTACTED
+  CLOSED
+}
+
 model AdminUser {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -58,6 +76,7 @@ model Customer {
   emailVerificationTokens EmailVerificationToken[]
   passwordResetTokens     PasswordResetToken[]
   refreshSessions         RefreshSession[]
+  serviceEnquiries        ServiceEnquiry[]
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 }
@@ -195,4 +214,41 @@ model MarketInsight {
   updatedAt    DateTime          @updatedAt
 
   @@index([type, publishedAt])
+}
+
+model ServiceListing {
+  id           String            @id @default(cuid())
+  title        String
+  slug         String            @unique
+  summary      String
+  description  String
+  category     ServiceCategory
+  providerName String
+  location     String?
+  imageUrl     String?
+  featured     Boolean           @default(false)
+  publishedAt  DateTime?
+  archivedAt   DateTime?
+  enquiries    ServiceEnquiry[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([category, publishedAt])
+}
+
+model ServiceEnquiry {
+  id         String               @id @default(cuid())
+  serviceId  String
+  service    ServiceListing       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  phone      String
+  message    String
+  status     ServiceEnquiryStatus @default(NEW)
+  adminNotes String?
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  @@index([customerId, createdAt])
+  @@index([status, createdAt])
 }

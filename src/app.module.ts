@@ -11,6 +11,7 @@ import { PrismaModule } from "./modules/prisma/prisma.module";
 import { ProductsModule } from "./modules/products/products.module";
 import { CustomersModule } from "./modules/customers/customers.module";
 import { MarketIntelligenceModule } from "./modules/market-intelligence/market-intelligence.module";
+import { ServiceDirectoryModule } from "./modules/service-directory/service-directory.module";
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { MarketIntelligenceModule } from "./modules/market-intelligence/market-i
     AuthModule,
     CustomersModule,
     MarketIntelligenceModule,
+    ServiceDirectoryModule,
     ProductsModule,
     OrdersModule,
     NotificationsModule,

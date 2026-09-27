@@ -5,6 +5,8 @@ import { UpsertProductDto } from "./dto/admin-product.dto";
 import { UpdateOrderNotesDto } from "./dto/update-order-notes.dto";
 import { UpdateOrderStatusDto } from "./dto/update-order-status.dto";
 import { UpsertMarketInsightDto } from "./dto/admin-market-insight.dto";
+import { UpsertServiceListingDto } from "./dto/admin-service-listing.dto";
+import { UpdateServiceEnquiryDto } from "./dto/update-service-enquiry.dto";
 
 @UseGuards(JwtAuthGuard)
 @Controller("admin")
@@ -64,6 +66,41 @@ export class AdminController {
   @Patch("market-intelligence/:id/unarchive")
   unarchiveMarketInsight(@Param("id") id: string) {
     return this.adminService.setMarketInsightArchived(id, false);
+  }
+
+  @Get("services")
+  services() {
+    return this.adminService.services();
+  }
+
+  @Post("services")
+  createService(@Body() dto: UpsertServiceListingDto) {
+    return this.adminService.createService(dto);
+  }
+
+  @Patch("services/:id")
+  updateService(@Param("id") id: string, @Body() dto: UpsertServiceListingDto) {
+    return this.adminService.updateService(id, dto);
+  }
+
+  @Patch("services/:id/archive")
+  archiveService(@Param("id") id: string) {
+    return this.adminService.setServiceArchived(id, true);
+  }
+
+  @Patch("services/:id/unarchive")
+  unarchiveService(@Param("id") id: string) {
+    return this.adminService.setServiceArchived(id, false);
+  }
+
+  @Get("service-enquiries")
+  serviceEnquiries() {
+    return this.adminService.serviceEnquiries();
+  }
+
+  @Patch("service-enquiries/:id")
+  updateServiceEnquiry(@Param("id") id: string, @Body() dto: UpdateServiceEnquiryDto) {
+    return this.adminService.updateServiceEnquiry(id, dto);
   }
 
   @Get("orders")

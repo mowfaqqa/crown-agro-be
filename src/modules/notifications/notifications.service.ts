@@ -8,6 +8,14 @@ type OrderCreatedNotification = {
   subtotal: number;
 };
 
+type ServiceEnquiryNotification = {
+  serviceTitle: string;
+  customerName: string;
+  customerEmail: string;
+  phone: string;
+  message: string;
+};
+
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
@@ -35,6 +43,21 @@ export class NotificationsService {
       "Reset your ZD Crown password",
       `<h1>Reset your password</h1><p>Hello ${this.escapeHtml(name)},</p><p>Use the link below to choose a new password.</p><p><a href="${url}">Reset password</a></p><p>This link expires in one hour. Ignore this email if you did not request it.</p>`,
       url
+    );
+  }
+
+  async sendServiceEnquiry(payload: ServiceEnquiryNotification) {
+    const recipient = this.config.get<string>("ENQUIRY_NOTIFICATION_EMAIL") ?? this.config.get<string>("ADMIN_EMAIL");
+    if (!recipient) {
+      this.logger.warn("No enquiry notification recipient is configured");
+      return;
+    }
+
+    await this.sendEmail(
+      recipient,
+      `New service enquiry: ${payload.serviceTitle}`,
+      `<h1>New service enquiry</h1><p><strong>Service:</strong> ${this.escapeHtml(payload.serviceTitle)}</p><p><strong>Customer:</strong> ${this.escapeHtml(payload.customerName)} (${this.escapeHtml(payload.customerEmail)})</p><p><strong>Phone:</strong> ${this.escapeHtml(payload.phone)}</p><p><strong>Message:</strong></p><p>${this.escapeHtml(payload.message).replace(/\n/g, "<br>")}</p>`,
+      `${this.frontendUrl()}/admin`
     );
   }
 

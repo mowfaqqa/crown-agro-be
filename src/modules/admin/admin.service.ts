@@ -4,6 +4,8 @@ import { PrismaService } from "../prisma/prisma.service";
 import { UpsertProductDto } from "./dto/admin-product.dto";
 import { UpdateOrderNotesDto } from "./dto/update-order-notes.dto";
 import { UpsertMarketInsightDto } from "./dto/admin-market-insight.dto";
+import { UpsertServiceListingDto } from "./dto/admin-service-listing.dto";
+import { UpdateServiceEnquiryDto } from "./dto/update-service-enquiry.dto";
 
 const allowedOrderTransitions: Record<OrderStatus, OrderStatus[]> = {
   PENDING: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
@@ -158,6 +160,60 @@ export class AdminService {
     });
   }
 
+  services() {
+    return this.prisma.serviceListing.findMany({
+      include: { _count: { select: { enquiries: true } } },
+      orderBy: [{ archivedAt: "asc" }, { updatedAt: "desc" }]
+    });
+  }
+
+  createService(dto: UpsertServiceListingDto) {
+    return this.prisma.serviceListing.create({ data: this.serviceListingData(dto) });
+  }
+
+  async updateService(id: string, dto: UpsertServiceListingDto) {
+    const existing = await this.ensureServiceExists(id);
+    return this.prisma.serviceListing.update({
+      where: { id },
+      data: this.serviceListingData(dto, existing.publishedAt)
+    });
+  }
+
+  async setServiceArchived(id: string, archived: boolean) {
+    await this.ensureServiceExists(id);
+    await this.prisma.serviceListing.update({
+      where: { id },
+      data: { archivedAt: archived ? new Date() : null, featured: archived ? false : undefined }
+    });
+    return { ok: true };
+  }
+
+  serviceEnquiries() {
+    return this.prisma.serviceEnquiry.findMany({
+      include: {
+        service: { select: { id: true, title: true, slug: true, category: true } },
+        customer: { select: { id: true, name: true, email: true } }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+  }
+
+  async updateServiceEnquiry(id: string, dto: UpdateServiceEnquiryDto) {
+    const existing = await this.prisma.serviceEnquiry.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException("Service enquiry not found");
+    return this.prisma.serviceEnquiry.update({
+      where: { id },
+      data: {
+        status: dto.status,
+        adminNotes: dto.adminNotes?.trim() || null
+      },
+      include: {
+        service: { select: { id: true, title: true, slug: true, category: true } },
+        customer: { select: { id: true, name: true, email: true } }
+      }
+    });
+  }
+
   async updateOrderStatus(id: string, status: OrderStatus) {
     return this.prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
@@ -214,6 +270,12 @@ export class AdminService {
     return existing;
   }
 
+  private async ensureServiceExists(id: string) {
+    const existing = await this.prisma.serviceListing.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException("Service not found");
+    return existing;
+  }
+
   private marketInsightData(dto: UpsertMarketInsightDto, publishedAt?: Date | null) {
     return {
       title: dto.title.trim(),
@@ -227,6 +289,21 @@ export class AdminService {
       dataValue: dto.dataValue?.trim() || null,
       sourceName: dto.sourceName?.trim() || null,
       sourceUrl: dto.sourceUrl?.trim() || null,
+      featured: dto.featured,
+      publishedAt: dto.published ? publishedAt ?? new Date() : null
+    };
+  }
+
+  private serviceListingData(dto: UpsertServiceListingDto, publishedAt?: Date | null) {
+    return {
+      title: dto.title.trim(),
+      slug: dto.slug.trim().toLowerCase(),
+      summary: dto.summary.trim(),
+      description: dto.description.trim(),
+      category: dto.category,
+      providerName: dto.providerName.trim(),
+      location: dto.location?.trim() || null,
+      imageUrl: dto.imageUrl?.trim() || null,
       featured: dto.featured,
       publishedAt: dto.published ? publishedAt ?? new Date() : null
     };
