@@ -4,6 +4,7 @@ import { AdminService } from "./admin.service";
 import { UpsertProductDto } from "./dto/admin-product.dto";
 import { UpdateOrderNotesDto } from "./dto/update-order-notes.dto";
 import { UpdateOrderStatusDto } from "./dto/update-order-status.dto";
+import { UpsertMarketInsightDto } from "./dto/admin-market-insight.dto";
 
 @UseGuards(JwtAuthGuard)
 @Controller("admin")
@@ -38,6 +39,31 @@ export class AdminController {
   @Patch("products/:id/unarchive")
   unarchiveProduct(@Param("id") id: string) {
     return this.adminService.unarchiveProduct(id);
+  }
+
+  @Get("market-intelligence")
+  marketIntelligence() {
+    return this.adminService.marketIntelligence();
+  }
+
+  @Post("market-intelligence")
+  createMarketInsight(@Body() dto: UpsertMarketInsightDto) {
+    return this.adminService.createMarketInsight(dto);
+  }
+
+  @Patch("market-intelligence/:id")
+  updateMarketInsight(@Param("id") id: string, @Body() dto: UpsertMarketInsightDto) {
+    return this.adminService.updateMarketInsight(id, dto);
+  }
+
+  @Patch("market-intelligence/:id/archive")
+  archiveMarketInsight(@Param("id") id: string) {
+    return this.adminService.setMarketInsightArchived(id, true);
+  }
+
+  @Patch("market-intelligence/:id/unarchive")
+  unarchiveMarketInsight(@Param("id") id: string) {
+    return this.adminService.setMarketInsightArchived(id, false);
   }
 
   @Get("orders")

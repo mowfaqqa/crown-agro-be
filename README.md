@@ -33,6 +33,12 @@ Customer access tokens are short-lived. Persistent login uses a rotating, HttpOn
 
 Add the exact `GOOGLE_REDIRECT_URI` to the Google OAuth client. In local development without Resend, verification and reset links are written to the backend log.
 
+## Market Intelligence
+
+The public API exposes published, non-archived market intelligence at `/market-intelligence`. The single admin role manages commodity updates, agriculture news, export opportunities, and weather advisories under `/admin/market-intelligence`.
+
+Entries are drafts until explicitly published. Sources, images, location, commodity, and headline values are optional so administrators can publish only information they have verified.
+
 ## Setup
 
 ```bash

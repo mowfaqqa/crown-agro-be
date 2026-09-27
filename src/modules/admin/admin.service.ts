@@ -3,6 +3,7 @@ import { OrderStatus, Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { UpsertProductDto } from "./dto/admin-product.dto";
 import { UpdateOrderNotesDto } from "./dto/update-order-notes.dto";
+import { UpsertMarketInsightDto } from "./dto/admin-market-insight.dto";
 
 const allowedOrderTransitions: Record<OrderStatus, OrderStatus[]> = {
   PENDING: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
@@ -115,6 +116,33 @@ export class AdminService {
     return { ok: true };
   }
 
+  marketIntelligence() {
+    return this.prisma.marketInsight.findMany({
+      orderBy: [{ archivedAt: "asc" }, { updatedAt: "desc" }]
+    });
+  }
+
+  createMarketInsight(dto: UpsertMarketInsightDto) {
+    return this.prisma.marketInsight.create({ data: this.marketInsightData(dto) });
+  }
+
+  async updateMarketInsight(id: string, dto: UpsertMarketInsightDto) {
+    const existing = await this.ensureMarketInsightExists(id);
+    return this.prisma.marketInsight.update({
+      where: { id },
+      data: this.marketInsightData(dto, existing.publishedAt)
+    });
+  }
+
+  async setMarketInsightArchived(id: string, archived: boolean) {
+    await this.ensureMarketInsightExists(id);
+    await this.prisma.marketInsight.update({
+      where: { id },
+      data: { archivedAt: archived ? new Date() : null, featured: archived ? false : undefined }
+    });
+    return { ok: true };
+  }
+
   async orders() {
     return this.prisma.order.findMany({
       include: {
@@ -178,6 +206,30 @@ export class AdminService {
   private async ensureProductExists(id: string) {
     const existing = await this.prisma.product.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException("Product not found");
+  }
+
+  private async ensureMarketInsightExists(id: string) {
+    const existing = await this.prisma.marketInsight.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException("Market intelligence entry not found");
+    return existing;
+  }
+
+  private marketInsightData(dto: UpsertMarketInsightDto, publishedAt?: Date | null) {
+    return {
+      title: dto.title.trim(),
+      slug: dto.slug.trim().toLowerCase(),
+      summary: dto.summary.trim(),
+      content: dto.content.trim(),
+      type: dto.type,
+      imageUrl: dto.imageUrl?.trim() || null,
+      location: dto.location?.trim() || null,
+      commodity: dto.commodity?.trim() || null,
+      dataValue: dto.dataValue?.trim() || null,
+      sourceName: dto.sourceName?.trim() || null,
+      sourceUrl: dto.sourceUrl?.trim() || null,
+      featured: dto.featured,
+      publishedAt: dto.published ? publishedAt ?? new Date() : null
+    };
   }
 
   private async findOrCreateSeller(name: string, country: string) {
