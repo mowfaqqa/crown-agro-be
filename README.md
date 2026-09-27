@@ -26,7 +26,7 @@ NestJS API for the ZD Crown agro marketplace.
 Customer access tokens are short-lived. Persistent login uses a rotating, HttpOnly refresh cookie that lasts 30 days. Configure these variables in production:
 
 - `CUSTOMER_ACCESS_TOKEN_EXPIRES_IN` - use `15m`
-- `RESEND_API_KEY` - sends verification and password-reset emails
+- `RESEND_API_KEY` - sends account emails plus service and investment acknowledgements
 - `EMAIL_FROM` - verified sender address in Resend
 - `ENQUIRY_NOTIFICATION_EMAIL` - receives new service enquiries; defaults to `ADMIN_EMAIL`
 - `INVESTMENT_NOTIFICATION_EMAIL` - receives expressions of investment interest; defaults to `ADMIN_EMAIL`
@@ -34,6 +34,8 @@ Customer access tokens are short-lived. Persistent login uses a rotating, HttpOn
 - `GOOGLE_REDIRECT_URI` - backend URL ending in `/auth/google/callback`
 
 Add the exact `GOOGLE_REDIRECT_URI` to the Google OAuth client. In local development without Resend, verification and reset links are written to the backend log.
+
+Authenticated customers can review their order history, service enquiries, and non-binding investment interests under `/customers/me`. Internal admin follow-up notes are never included in customer responses.
 
 ## Market Intelligence
 

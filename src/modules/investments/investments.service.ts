@@ -89,16 +89,19 @@ export class InvestmentsService {
       }
     });
 
-    await this.notifications.sendInvestmentInterest({
-      opportunityTitle: opportunity.title,
-      customerName: customer.name,
-      customerEmail: customer.email,
-      investorType: interest.investorType,
-      organizationName: interest.organizationName,
-      phone: interest.phone,
-      indicativeAmount: interest.indicativeAmount,
-      message: interest.message
-    });
+    await Promise.all([
+      this.notifications.sendInvestmentInterest({
+        opportunityTitle: opportunity.title,
+        customerName: customer.name,
+        customerEmail: customer.email,
+        investorType: interest.investorType,
+        organizationName: interest.organizationName,
+        phone: interest.phone,
+        indicativeAmount: interest.indicativeAmount,
+        message: interest.message
+      }),
+      this.notifications.sendInvestmentInterestAcknowledgement(customer.email, customer.name, opportunity.title)
+    ]);
 
     return { id: interest.id, status: interest.status, createdAt: interest.createdAt };
   }

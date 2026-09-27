@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { OrderStatus, Prisma } from "@prisma/client";
+import { InvestmentInterestStatus, OrderStatus, Prisma, ServiceEnquiryStatus } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { UpsertProductDto } from "./dto/admin-product.dto";
 import { UpdateOrderNotesDto } from "./dto/update-order-notes.dto";
@@ -23,10 +23,12 @@ export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
 
   async stats() {
-    const [products, orders, pendingOrders, lowStock, paidRevenue] = await Promise.all([
+    const [products, orders, pendingOrders, newServiceEnquiries, newInvestmentInterests, lowStock, paidRevenue] = await Promise.all([
       this.prisma.product.count({ where: { archivedAt: null } }),
       this.prisma.order.count(),
       this.prisma.order.count({ where: { status: OrderStatus.PENDING } }),
+      this.prisma.serviceEnquiry.count({ where: { status: ServiceEnquiryStatus.NEW } }),
+      this.prisma.investmentInterest.count({ where: { status: InvestmentInterestStatus.NEW } }),
       this.prisma.product.count({ where: { archivedAt: null, stockQuantity: { lte: 20 } } }),
       this.prisma.order.aggregate({
         where: { status: { in: [OrderStatus.PAID, OrderStatus.FULFILLED] } },
@@ -38,6 +40,8 @@ export class AdminService {
       products,
       orders,
       pendingOrders,
+      newServiceEnquiries,
+      newInvestmentInterests,
       lowStock,
       revenue: paidRevenue._sum.subtotal ?? 0
     };

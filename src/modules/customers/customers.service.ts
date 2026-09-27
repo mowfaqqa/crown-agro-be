@@ -35,4 +35,54 @@ export class CustomersService {
       orderBy: { createdAt: "desc" }
     });
   }
+
+  serviceEnquiries(customerId: string) {
+    return this.prisma.serviceEnquiry.findMany({
+      where: { customerId },
+      select: {
+        id: true,
+        phone: true,
+        message: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        service: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            providerName: true,
+            location: true
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+  }
+
+  investmentInterests(customerId: string) {
+    return this.prisma.investmentInterest.findMany({
+      where: { customerId },
+      select: {
+        id: true,
+        investorType: true,
+        organizationName: true,
+        phone: true,
+        indicativeAmount: true,
+        message: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        opportunity: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            location: true
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+  }
 }

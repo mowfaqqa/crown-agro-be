@@ -90,13 +90,16 @@ export class ServiceDirectoryService {
       }
     });
 
-    await this.notifications.sendServiceEnquiry({
-      serviceTitle: service.title,
-      customerName: customer.name,
-      customerEmail: customer.email,
-      phone: enquiry.phone,
-      message: enquiry.message
-    });
+    await Promise.all([
+      this.notifications.sendServiceEnquiry({
+        serviceTitle: service.title,
+        customerName: customer.name,
+        customerEmail: customer.email,
+        phone: enquiry.phone,
+        message: enquiry.message
+      }),
+      this.notifications.sendServiceEnquiryAcknowledgement(customer.email, customer.name, service.title)
+    ]);
 
     return { id: enquiry.id, status: enquiry.status, createdAt: enquiry.createdAt };
   }

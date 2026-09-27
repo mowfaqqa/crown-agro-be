@@ -25,4 +25,14 @@ export class CustomersController {
   orders(@Req() request: CustomerRequest) {
     return this.customersService.orders(request.user.id);
   }
+
+  @Get("service-enquiries")
+  serviceEnquiries(@Req() request: CustomerRequest) {
+    return this.customersService.serviceEnquiries(request.user.id);
+  }
+
+  @Get("investment-interests")
+  investmentInterests(@Req() request: CustomerRequest) {
+    return this.customersService.investmentInterests(request.user.id);
+  }
 }
