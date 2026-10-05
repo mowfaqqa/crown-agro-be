@@ -20,6 +20,21 @@ NestJS API for the ZD Crown agro marketplace.
 - Checkout requests are idempotent and require a customer JWT.
 - Cancelling an unpaid order restores its reserved stock.
 - Order status changes follow a controlled fulfillment sequence.
+- Confirmed orders are initialized and verified server-side through Paystack before becoming paid.
+
+## Payments And Media
+
+Paystack uses the hosted checkout flow, so only `PAYSTACK_SECRET_KEY` is required by this application. Keep it on the backend. Set the Paystack webhook URL to:
+
+```text
+https://YOUR-BACKEND-HOST/payments/paystack/webhook
+```
+
+The API verifies the webhook signature plus the order reference, NGN currency, and exact amount before marking an order paid. Customers can also trigger server-side verification after Paystack redirects them back.
+
+Admin image uploads use a private Cloudflare R2 API token through its S3-compatible endpoint. Configure `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, and `R2_PUBLIC_BASE_URL`. The public base URL must be an enabled R2 custom domain or `r2.dev` development URL for the bucket. Credentials never belong in the frontend.
+
+KYC, contracts, and regulated investment transactions are intentionally deferred. Investment opportunities remain informational and accept non-binding expressions of interest only.
 
 ## Customer Account Integrations
 
@@ -86,6 +101,9 @@ Required environment variables:
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD`
 - `FRONTEND_URL` - deployed frontend URL
+- `PAYSTACK_SECRET_KEY` - Paystack secret key for the matching test or live environment
+- `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET_NAME`
+- `R2_PUBLIC_BASE_URL` - public custom domain or development URL for uploaded images
 - `RESEND_API_KEY`, `EMAIL_FROM`, and optionally the enquiry notification addresses
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI`
 - `PORT` - Render sets this automatically; only add it if needed

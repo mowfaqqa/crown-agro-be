@@ -13,6 +13,8 @@ import { CustomersModule } from "./modules/customers/customers.module";
 import { MarketIntelligenceModule } from "./modules/market-intelligence/market-intelligence.module";
 import { ServiceDirectoryModule } from "./modules/service-directory/service-directory.module";
 import { InvestmentsModule } from "./modules/investments/investments.module";
+import { MediaModule } from "./modules/media/media.module";
+import { PaymentsModule } from "./modules/payments/payments.module";
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import { InvestmentsModule } from "./modules/investments/investments.module";
     MarketIntelligenceModule,
     ServiceDirectoryModule,
     InvestmentsModule,
+    MediaModule,
+    PaymentsModule,
     ProductsModule,
     OrdersModule,
     NotificationsModule,

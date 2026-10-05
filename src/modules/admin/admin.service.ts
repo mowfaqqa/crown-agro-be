@@ -11,8 +11,8 @@ import { UpdateInvestmentInterestDto } from "./dto/update-investment-interest.dt
 
 const allowedOrderTransitions: Record<OrderStatus, OrderStatus[]> = {
   PENDING: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
-  CONFIRMED: [OrderStatus.AWAITING_PAYMENT, OrderStatus.CANCELLED],
-  AWAITING_PAYMENT: [OrderStatus.PAID, OrderStatus.CANCELLED],
+  CONFIRMED: [OrderStatus.CANCELLED],
+  AWAITING_PAYMENT: [],
   PAID: [OrderStatus.FULFILLED],
   FULFILLED: [],
   CANCELLED: []
